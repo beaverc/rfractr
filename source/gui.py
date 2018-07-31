@@ -7,7 +7,7 @@ import tkinter as tk
 import argparse
 import sys
 
-from primitives import SphericalSurface, Component, Ray, Point
+from primitives import SphericalSurface, Component, Ray, Point, Arrangement
 
 class pyTrcGUI(object):
     """
@@ -72,6 +72,9 @@ class pyTrcGUI(object):
                     p0 = self.conv_coord(segment.start.get_tuple())
                     p1 = self.conv_coord(segment.end.get_tuple())
                     self.canvas.create_line(p0[0], p0[1], p1[0], p1[1], fill="red")
+        elif isinstance(obj, Arrangement):
+            for comp in obj.components:
+                self.add_object(comp)
 
     def mainloop(self):
         tk.mainloop()
@@ -79,18 +82,17 @@ class pyTrcGUI(object):
 def main():
     trc = pyTrcGUI()
     comp1 = Component(500, 25, 100, 150, 100, 3)
-    comp2 = Component(650, 30, 150, -400, -100, 3)
-    trc.add_object(comp1)
-    trc.add_object(comp2)
+    comp2 = Component(850, 30, 150, -400, -100, 3)
+    arrangement = Arrangement(comp1, comp2)
+    trc.add_object(arrangement)
 
     ray1 = Ray(Point(0, 10), 0)
-    ray2 = Ray(Point(0, 20), 0)
-    comp1.trace(ray1)
-    comp1.trace(ray2)
+    ray2 = Ray(Point(0, -10), 0)
+    arrangement.trace(ray1)
+    arrangement.trace(ray2)
     trc.add_object(ray1)
     trc.add_object(ray2)
 
-    import pdb; pdb.set_trace()
     trc.mainloop()
     return 0
 

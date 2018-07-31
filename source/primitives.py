@@ -70,7 +70,6 @@ class SphericalSurface(object):
     def __init__(self, pos, r, aperture, index):
         """
         """
-        # import pdb; pdb.set_trace()
         self.pos_x = pos
         self.ctr_x = pos + r
         self.r = r
@@ -121,13 +120,17 @@ class SphericalSurface(object):
 
         x_test = self.x_apt
         y_test = h_apt
+
+        import pdb; pdb.set_trace()
         STEP = 0.001
+        if self.r > 0:
+            STEP = -STEP
 
         while True:
             if not self.in_circle(x_test, y_test):
                 break
-            x_test -= STEP*cos(segment.angle)
-            y_test -= STEP*sin(segment.angle)
+            x_test += STEP*cos(segment.angle)
+            y_test += STEP*sin(segment.angle)
 
         print("----")
         print(x_test)
@@ -167,7 +170,6 @@ class SphericalSurface(object):
     def trace(self, ray):
         """
         """
-        import pdb; pdb.set_trace()
         segment = ray.get_last_segment()
         if segment:
             intersection = self.get_intersection(segment)
@@ -309,3 +311,29 @@ class Point(object):
         """
         """
         return (self.x, self.y)
+
+class Arrangement(object):
+    """
+    """
+
+    def __init__(self, *args, index=1.0):
+        """
+        """
+        self.components = []
+        for arg in args:
+            if not isinstance(arg, Component):
+                raise ValueError("Expecting type Component")
+            self.components.append(arg)
+
+    def add_component(self, component):
+        """
+        """
+        if not isinstance(arg, Component):
+            raise ValueError("Expecting type Component")
+        self.components.append(arg)
+
+    def trace(self, ray):
+        """
+        """
+        for comp in self.components:
+            comp.trace(ray)
