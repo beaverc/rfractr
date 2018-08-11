@@ -7,7 +7,7 @@ import tkinter as tk
 import argparse
 import sys
 
-from primitives import SphericalSurface, Component, Ray, Point, Arrangement
+from primitives import SphericalSurface, Component, Ray, Point, Arrangement, RayPattern
 
 class pyTrcGUI(object):
     """
@@ -72,6 +72,13 @@ class pyTrcGUI(object):
                     p0 = self.conv_coord(segment.start.get_tuple())
                     p1 = self.conv_coord(segment.end.get_tuple())
                     self.canvas.create_line(p0[0], p0[1], p1[0], p1[1], fill="red")
+        elif isinstance(obj, RayPattern):
+            for ray in obj.rays:
+                for segment in ray.get_segments():
+                    if not segment.end is None:
+                        p0 = self.conv_coord(segment.start.get_tuple())
+                        p1 = self.conv_coord(segment.end.get_tuple())
+                        self.canvas.create_line(p0[0], p0[1], p1[0], p1[1], fill="red")
         elif isinstance(obj, Arrangement):
             for comp in obj.components:
                 self.add_object(comp)
@@ -85,14 +92,12 @@ def main():
     comp2 = Component(850, 30, 150, -400, -100, 3)
     arrangement = Arrangement(comp1, comp2)
     trc.add_object(arrangement)
-
-    ray1 = Ray(Point(0, 10), 0)
-    ray2 = Ray(Point(0, -10), 0)
-    arrangement.trace(ray1)
-    arrangement.trace(ray2)
-    trc.add_object(ray1)
-    trc.add_object(ray2)
-
+    ray_pattern = RayPattern(start=Point(0, 20), stop=Point(0, -20), type=RayPattern.TYPE_PAR, count=5)
+    # ray = Ray(Point(0, -20), 0)
+    arrangement.trace(ray_pattern)
+    # arrangement.trace(ray)
+    trc.add_object(ray_pattern)
+    # trc.add_object(ray)
     trc.mainloop()
     return 0
 

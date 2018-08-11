@@ -4,21 +4,8 @@
 
 """
 
-from math import sqrt, tan, pi, cos, acos, sin, asin
-
-def myrange(start, end, step):
-    vals = []
-    curr = start
-    while curr <= end:
-        vals.append(float(curr))
-        curr += step
-    return vals
-
-def rad2deg(rad):
-    return 180*rad/pi
-
-def deg2rad(deg):
-    return pi*deg/180
+from math import sqrt, tan, cos, acos, sin, asin
+from trcutils import myrange, rad2deg, deg2rad
 
 class Vector(object):
     """
@@ -48,6 +35,7 @@ class Vector(object):
 
     def angle(self, other):
         cosine = self.dot(other)/(self.mag()*other.mag())
+        angle = acos(cosine)
         return acos(cosine)
 
     def angle_x(self):
@@ -121,7 +109,6 @@ class SphericalSurface(object):
         x_test = self.x_apt
         y_test = h_apt
 
-        import pdb; pdb.set_trace()
         STEP = 0.001
         if self.r > 0:
             STEP = -STEP
@@ -142,6 +129,7 @@ class SphericalSurface(object):
         """
         """
         # Angle between surface normal (v) and incident ray (u)
+        import pdb; pdb.set_trace()
         v = Vector(intersect.x-self.ctr_x, intersect.y)
         u = Vector(intersect.x-segment.start.x, intersect.y-segment.start.y)
         angle = v.angle(u)
@@ -151,7 +139,10 @@ class SphericalSurface(object):
 
         sine = n1*sin(angle)/n2
         angle2 = asin(sine)
-        angle2 -= v.angle_x()
+        if intersect.y > 0:
+            angle2 -= v.angle_x()
+        else:
+            angle2 += v.angle_x()
 
         return Segment(start=intersect, angle=angle2)
 
@@ -332,8 +323,46 @@ class Arrangement(object):
             raise ValueError("Expecting type Component")
         self.components.append(arg)
 
-    def trace(self, ray):
+    def trace(self, obj):
         """
         """
-        for comp in self.components:
-            comp.trace(ray)
+        if isinstance(obj, Ray):
+            for comp in self.components:
+                comp.trace(obj)
+        elif isinstance(obj, RayPattern):
+            for ray in obj.rays:
+                for comp in self.components:
+                    comp.trace(ray)
+
+class RayPattern(object):
+    """
+    """
+    TYPE_FAN = 0
+    TYPE_PAR = 1
+
+    def __init__(self, **kwargs):
+        """
+        """
+        self.rays = []
+        if not "type" in kwargs:
+            raise ValueError("Expecting option 'type'")
+        if not "start" in kwargs:
+            raise ValueError("Expecting option 'start'")
+        else:
+            start = kwargs["start"]
+        if kwargs["type"]==RayPattern.TYPE_PAR:
+            if not "stop" in kwargs:
+                raise ValueError("Expecting option 'stop'")
+            else:
+                stop = kwargs["stop"]
+            if not "count" in kwargs:
+                raise ValueError("Expecting option 'count'")
+            else:
+                count = kwargs["count"]
+            step = (stop.y-start.y)/(count-1)
+            new_y = start.y
+            for i in range(count):
+                self.rays.append(Ray(Point(start.x, new_y), 0))
+                new_y += step
+        else:
+            raise ValueError("Invalid RayPattern type")

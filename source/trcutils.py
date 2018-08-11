@@ -4,6 +4,8 @@
 
 """
 
+from math import pi
+
 def myrange(start, end, step):
     vals = []
     curr = start
