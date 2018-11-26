@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env/python3
+
 """
 
 """
@@ -92,9 +93,10 @@ def main():
     comp2 = Component(850, 30, 150, -400, -100, 3)
     arrangement = Arrangement(comp1, comp2)
     trc.add_object(arrangement)
-    ray_pattern = RayPattern(start=Point(0, 20), stop=Point(0, -20), type=RayPattern.TYPE_PAR, count=5)
+    ray_pattern = RayPattern(start=Point(0, 20), stop=Point(0, -20), type=RayPattern.TYPE_PAR, count=2)
     # ray = Ray(Point(0, -20), 0)
     arrangement.trace(ray_pattern)
+    ray_pattern.print()
     # arrangement.trace(ray)
     trc.add_object(ray_pattern)
     # trc.add_object(ray)

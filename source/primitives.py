@@ -4,8 +4,29 @@
 
 """
 
-from math import sqrt, tan, cos, acos, sin, asin
+from math import sqrt, tan, atan, cos, acos, sin, asin, pi
 from trcutils import myrange, rad2deg, deg2rad
+
+def tabular_print(*args, width=80):
+    """Print data as a table
+    """
+    cols = len(args)
+    colw = width//cols
+
+    # Pad or truncate depending on length
+    rowstring = ""
+    for arg in args:
+        if len(arg) == colw:
+            temp = arg
+        elif len(arg) > colw:
+            temp = arg[0:colw]
+        else:
+            diff = colw - len(arg)
+            temp = arg
+            temp += "".join(" " for i in range(diff))
+        rowstring += temp
+
+    print(rowstring)
 
 class Vector(object):
     """
@@ -39,12 +60,18 @@ class Vector(object):
         return acos(cosine)
 
     def angle_x(self):
-        x_axis = Vector(self.x, 0)
-        return self.angle(x_axis)
+        if self.x == 0:
+            if self.y > 0:
+                return pi
+            else:
+                return -pi
+        else:
+            angle_tan = self.y/self.x
+            return atan(angle_tan)
 
-    def angle_y(self):
-        y_axis = Vector(0, self.y)
-        return self.angle(y_axis)
+    # def angle_y(self):
+    #     y_axis = Vector(0, self.y)
+    #     return self.angle(y_axis)
 
     def extend(self, distance):
         angle_x = self.angle(Vector(self.x, 0))
@@ -58,6 +85,11 @@ class SphericalSurface(object):
     def __init__(self, pos, r, aperture, index):
         """
         """
+        # Evaluate radius
+        if r == 0:
+            raise ValueError("Radius must be a nonzero number")
+
+        #
         self.pos_x = pos
         self.ctr_x = pos + r
         self.r = r
@@ -104,7 +136,7 @@ class SphericalSurface(object):
         h_apt = segment.start.y+tan(segment.angle)*x_dist
 
         if h_apt>self.ap/2 or h_apt<(-1)*self.ap/2:
-            return None, None
+            return None
 
         x_test = self.x_apt
         y_test = h_apt
@@ -119,17 +151,12 @@ class SphericalSurface(object):
             x_test += STEP*cos(segment.angle)
             y_test += STEP*sin(segment.angle)
 
-        print("----")
-        print(x_test)
-        print(y_test)
-
         return Point(x_test, y_test)
 
     def get_refraction(self, segment, intersect, index):
         """
         """
         # Angle between surface normal (v) and incident ray (u)
-        import pdb; pdb.set_trace()
         v = Vector(intersect.x-self.ctr_x, intersect.y)
         u = Vector(intersect.x-segment.start.x, intersect.y-segment.start.y)
         angle = v.angle(u)
@@ -139,10 +166,22 @@ class SphericalSurface(object):
 
         sine = n1*sin(angle)/n2
         angle2 = asin(sine)
-        if intersect.y > 0:
-            angle2 -= v.angle_x()
+        angle2 -= v.angle_x()
+
+        # NOTE: Dot product used in method Vector.angle() only returns shortest
+        # angle between two vectors, but doesn't give any information about
+        # direction, therefore the location with respect to the y-axis as well
+        # as the surface radius must be checked
+        if intersect.y >= 0:
+            if self.r > 0:
+                angle2 -= v.angle_x()
+            else:
+                angle2 += v.angle_x()
         else:
-            angle2 += v.angle_x()
+            if self.r > 0:
+                angle2 += v.angle_x()
+            else:
+                angle2 -= v.angle_x()
 
         return Segment(start=intersect, angle=angle2)
 
@@ -164,8 +203,11 @@ class SphericalSurface(object):
         segment = ray.get_last_segment()
         if segment:
             intersection = self.get_intersection(segment)
-            refraction = self.get_refraction(segment, intersection, 1.5)
-            ray.add_segment(refraction)
+            if intersection is None:
+                segment.out_of_range = True
+            else:
+                refraction = self.get_refraction(segment, intersection, 1.5)
+                ray.add_segment(refraction)
 
 class Component(object):
     """An optical component consisting of an entry and exit spherical surface
@@ -218,7 +260,6 @@ class Ray(object):
         """
         """
         self.__segments = [Segment(start=start, angle=angle)]
-        self.__index = 0
 
     def add_segment(self, newseg):
         """
@@ -249,6 +290,19 @@ class Ray(object):
         """
         return self.__segments
 
+    def print(self):
+        """Prints out the segments from start to end for debug purposes
+        """
+        print("".join("#" for i in range(80)))
+        print("".join("#" for i in range(80)))
+        tabular_print("START", "END", "ANGLE")
+        for i in range(len(self.__segments)):
+            seg = self.__segments[i]
+            start = "{:.4f},{:.4f}".format(seg.start.x, seg.start.y) if not seg.start is None else str(seg.start)
+            end = "{:.4f},{:.4f}".format(seg.end.x, seg.end.y) if not seg.end is None else str(seg.end)
+            angle = "{:.4f}".format(seg.angle) if not seg.angle is None else str(seg.angle)
+            tabular_print(start, end, angle)
+
 class Segment(object):
     """Representation of a single segment in a ray's path
     """
@@ -271,6 +325,11 @@ class Segment(object):
             self.angle = Vector((self.end.x-self.start.x), (self.end.y-self.start.y)).angle_x()
         else:
             ValueError("Invalid arguments")
+
+        if "out_of_range" in kwargs:
+            self.out_of_range = kwargs["out_of_range"]
+        else:
+            self.out_of_range = False
 
     def update(self, **kwargs):
         """
@@ -366,3 +425,7 @@ class RayPattern(object):
                 new_y += step
         else:
             raise ValueError("Invalid RayPattern type")
+
+    def print(self):
+        for ray in self.rays:
+            ray.print()
