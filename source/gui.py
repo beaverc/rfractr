@@ -7,8 +7,13 @@
 import tkinter as tk
 import argparse
 import sys
+import math
+import yaml
 
-from primitives import SphericalSurface, Component, Ray, Point, Arrangement, RayPattern
+from primitives import SphericalSurface, PlanarSurface, Component, Ray, Point, Arrangement, RayPattern
+
+LABEL_COMPONENTS = "components"
+
 
 class pyTrcGUI(object):
     """
@@ -46,19 +51,36 @@ class pyTrcGUI(object):
         """
         """
         if isinstance(obj, SphericalSurface):
-            p0, p1, ang = obj.surf1.draw_curve()
+            p0, p1, ang = obj.draw_curve()
             p0 = self.conv_coord(p0)
             p1 = self.conv_coord(p1)
             self.canvas.create_arc(p0[0], p0[1], p1[0], p1[1], start=ang[0], extent=ang[1], style=tk.ARC)
-        elif isinstance(obj, Component):
-            p0, p1, ang1 = obj.surf1.draw_curve()
+        elif isinstance(obj, PlanarSurface):
+            p0, p1 = obj.draw_curve()
             p0 = self.conv_coord(p0)
             p1 = self.conv_coord(p1)
-            self.canvas.create_arc(p0[0], p0[1], p1[0], p1[1], start=ang1[0], extent=ang1[1], style=tk.ARC)
-            p2, p3, ang2 = obj.surf2.draw_curve()
-            p2 = self.conv_coord(p2)
-            p3 = self.conv_coord(p3)
-            self.canvas.create_arc(p2[0], p2[1], p3[0], p3[1], start=ang2[0], extent=ang2[1], style=tk.ARC)
+            self.canvas.create_line(p0[0], p0[1], p1[0], p1[1])
+        elif isinstance(obj, Component):
+            if isinstance(obj.surf1, PlanarSurface):
+                p0, p1 = obj.surf1.draw_curve()
+                p0 = self.conv_coord(p0)
+                p1 = self.conv_coord(p1)
+                self.canvas.create_line(p0[0], p0[1], p1[0], p1[1])
+            else:
+                p0, p1, ang1 = obj.surf1.draw_curve()
+                p0 = self.conv_coord(p0)
+                p1 = self.conv_coord(p1)
+                self.canvas.create_arc(p0[0], p0[1], p1[0], p1[1], start=ang1[0], extent=ang1[1], style=tk.ARC)
+            if isinstance(obj.surf2, PlanarSurface):
+                p2, p3 = obj.surf2.draw_curve()
+                p2 = self.conv_coord(p2)
+                p3 = self.conv_coord(p3)
+                self.canvas.create_line(p2[0], p2[1], p3[0], p3[1])
+            else:
+                p2, p3, ang2 = obj.surf2.draw_curve()
+                p2 = self.conv_coord(p2)
+                p3 = self.conv_coord(p3)
+                self.canvas.create_arc(p2[0], p2[1], p3[0], p3[1], start=ang2[0], extent=ang2[1], style=tk.ARC)
             p4, p5 = obj.draw_line_upper()
             p4 = self.conv_coord(p4)
             p5 = self.conv_coord(p5)
@@ -87,22 +109,48 @@ class pyTrcGUI(object):
     def mainloop(self):
         tk.mainloop()
 
-def main():
+def preprocess(comp):
+    """
+    """
+    output = []
+    for c in comp:
+        output.append(comp[c])
+    return output
+
+def main(options):
     trc = pyTrcGUI()
-    comp1 = Component(500, 25, 100, 150, -150, 3)
-    #comp2 = Component(850, 25, 100, 150, -150, 3)
-    comp2 = Component(850, 30, 150, -400, -100, 3)
-    arrangement = Arrangement(comp1, comp2)
+
+    with open(options.config, "r") as fconfig:
+        config = yaml.load(fconfig.read())
+
+    if not LABEL_COMPONENTS in config:
+        raise ValueError("No components specified in config file")
+
+    components = []
+    for comp in config[LABEL_COMPONENTS]:
+        proc = preprocess(comp)
+        components.append(Component(*proc))
+
+    arrangement = Arrangement(*components)
     trc.add_object(arrangement)
-    ray_pattern = RayPattern(start=Point(0, 20), stop=Point(0, -20), type=RayPattern.TYPE_PAR, count=20)
+
+    #comp1 = Component(500, 25, 100, math.inf, -150, 3)
+    #comp2 = Component(850, 25, 100, 150, -150, 3)
+    #comp2 = Component(850, 35, 150, math.inf, -100, 3)
+    #arrangement = Arrangement(comp1, comp2)
+    #ray_pattern = RayPattern(start=Point(0, 20), stop=Point(0, -20), type=RayPattern.TYPE_PAR, count=20)
     # ray = Ray(Point(0, -20), 0)
-    arrangement.trace(ray_pattern)
-    ray_pattern.print()
+    #arrangement.trace(ray_pattern)
+    #ray_pattern.print()
     # arrangement.trace(ray)
-    trc.add_object(ray_pattern)
+    #trc.add_object(ray_pattern)
     # trc.add_object(ray)
     trc.mainloop()
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config", help="Path to arrangement configuration file")
+    parser.add_argument("--print", help="Print ray data")
+    options = parser.parse_args()
+    sys.exit(main(options))

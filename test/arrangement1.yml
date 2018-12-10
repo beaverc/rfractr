@@ -1,0 +1,17 @@
+object_plane:
+  a: blah
+
+components:
+  - pos:      500
+    spacing:  25
+    aperture: 100
+    radius1:  INF
+    radius2:  -150
+    index:    3
+
+  - pos:      850
+    spacing:  35
+    aperture: 150
+    radius1:  INF
+    radius2:  -100
+    index:    3

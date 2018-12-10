@@ -4,7 +4,7 @@
 
 """
 
-from math import sqrt, tan, atan, cos, acos, sin, asin, pi
+from math import sqrt, tan, atan, cos, acos, sin, asin, pi, inf
 from trcutils import myrange, rad2deg, deg2rad, sign
 
 def tabular_print(*args, width=80):
@@ -237,10 +237,15 @@ class PlanarSurface(object):
         n1 = 1
         n2 = index
 
-        sine = n1*sin(segmant.angle)/n2
+        sine = n1*sin(segment.angle)/n2
         angle2 = asin(sine)
 
         return Segment(start=intersect, angle=angle2)
+
+    def draw_curve(self):
+        """
+        """
+        return (self.pos_x, self.ap/2), (self.pos_x, -1*self.ap/2)
 
     def trace(self, ray):
         """
@@ -255,40 +260,59 @@ class PlanarSurface(object):
                 ray.add_segment(refraction)
 
 class Component(object):
-    """An optical component consisting of an entry and exit spherical surface
+    """An optical component consisting of an entry and exit surface (spherical
+       or planar)
     """
 
     def __init__(self, pos, spacing, aperture, radius1, radius2, index):
         """
         """
         self.index = index
-        self.surf1 = SphericalSurface(pos, radius1, aperture, index)
-        self.surf2 = SphericalSurface(pos+spacing, radius2, aperture, index)
+        if radius1=="INF":
+            self.surf1 = PlanarSurface(pos, aperture, index)
+        else:
+            self.surf1 = SphericalSurface(pos, radius1, aperture, index)
+        if radius2=="INF":
+            self.surf2 = PlanarSurface(pos+spacing, aperture, index)
+        else:
+            self.surf2 = SphericalSurface(pos+spacing, radius2, aperture, index)
 
     def draw_line_upper(self):
-        """Draw the top connecting line between two spherical surfaces
+        """Draw the top connecting line between two surfaces
         """
-        if self.surf1.r > 0:
-            x_start = self.surf1.pos_x+self.surf1.thick
+        if isinstance(self.surf1, PlanarSurface):
+            x_start = self.surf1.pos_x
         else:
-            x_start = self.surf1.pos_x-self.surf1.thick
-        if self.surf2.r > 0:
-            x_stop = self.surf2.pos_x+self.surf2.thick
+            if self.surf1.r > 0:
+                x_start = self.surf1.pos_x+self.surf1.thick
+            else:
+                x_start = self.surf1.pos_x-self.surf1.thick
+        if isinstance(self.surf2, PlanarSurface):
+            x_stop = self.surf2.pos_x
         else:
-            x_stop = self.surf2.pos_x-self.surf2.thick
+            if self.surf2.r > 0:
+                x_stop = self.surf2.pos_x+self.surf2.thick
+            else:
+                x_stop = self.surf2.pos_x-self.surf2.thick
         return (x_start, self.surf1.ap/2), (x_stop, self.surf1.ap/2)
 
     def draw_line_lower(self):
-        """Draw the bottom connecting line between two spherical surfaces
+        """Draw the bottom connecting line between two surfaces
         """
-        if self.surf1.r > 0:
-            x_start = self.surf1.pos_x+self.surf1.thick
+        if isinstance(self.surf1, PlanarSurface):
+            x_start = self.surf1.pos_x
         else:
-            x_start = self.surf1.pos_x-self.surf1.thick
-        if self.surf2.r > 0:
-            x_stop = self.surf2.pos_x+self.surf2.thick
+            if self.surf1.r > 0:
+                x_start = self.surf1.pos_x+self.surf1.thick
+            else:
+                x_start = self.surf1.pos_x-self.surf1.thick
+        if isinstance(self.surf2, PlanarSurface):
+            x_stop = self.surf2.pos_x
         else:
-            x_stop = self.surf2.pos_x-self.surf2.thick
+            if self.surf2.r > 0:
+                x_stop = self.surf2.pos_x+self.surf2.thick
+            else:
+                x_stop = self.surf2.pos_x-self.surf2.thick
         return (x_start, -1*self.surf1.ap/2), (x_stop, -1*self.surf1.ap/2)
 
     def trace(self, ray):
