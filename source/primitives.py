@@ -5,7 +5,7 @@
 """
 
 from math import sqrt, tan, atan, cos, acos, sin, asin, pi
-from trcutils import myrange, rad2deg, deg2rad
+from trcutils import myrange, rad2deg, deg2rad, sign
 
 def tabular_print(*args, width=80):
     """Print data as a table
@@ -55,19 +55,26 @@ class Vector(object):
         return sqrt(self.x**2+self.y**2)
 
     def angle(self, other):
-        cosine = self.dot(other)/(self.mag()*other.mag())
-        angle = acos(cosine)
-        return acos(cosine)
+        import pdb; pdb.set_trace()
+        v1_anglex = self.angle_x()
+        v2_anglex = other.angle_x()
+
+        if (v1_anglex>=0 and v2_anglex>=0) or (v1_anglex<=0 and v2_anglex<=0):
+            return v2_anglex-v1_anglex
+        elif (v1_anglex>0 and v2_anglex<0) or (v1_anglex<0 and v2_anglex>0):
+            v1_negativex = v1_anglex-pi
+            # Return the closest angle between the two vectors
+            if v2_anglex<=v1_negativex:
+                return v2_anglex+v1_anglex+pi
+            else:
+                return v2_anglex-v1_anglex
 
     def angle_x(self):
-        if self.x == 0:
-            if self.y > 0:
-                return pi
-            else:
-                return -pi
-        else:
-            angle_tan = self.y/self.x
+        angle_tan = self.y/self.x
+        if self.x>=0:
             return atan(angle_tan)
+        else:
+            return atan(angle_tan)+sign(self.y)*pi
 
     # def angle_y(self):
     #     y_axis = Vector(0, self.y)
