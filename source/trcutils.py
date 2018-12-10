@@ -19,3 +19,9 @@ def rad2deg(rad):
 
 def deg2rad(deg):
     return pi*deg/180
+
+def sign(val):
+    if val>=0:
+        return 1
+    else:
+        return -1
