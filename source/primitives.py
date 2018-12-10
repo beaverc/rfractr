@@ -55,7 +55,6 @@ class Vector(object):
         return sqrt(self.x**2+self.y**2)
 
     def angle(self, other):
-        import pdb; pdb.set_trace()
         v1_anglex = self.angle_x()
         v2_anglex = other.angle_x()
 
@@ -163,32 +162,27 @@ class SphericalSurface(object):
     def get_refraction(self, segment, intersect, index):
         """
         """
+        # Check if surface is concave or convex
+        concave = self.ctr_x<intersect.x
+
         # Angle between surface normal (v) and incident ray (u)
         v = Vector(intersect.x-self.ctr_x, intersect.y)
-        u = Vector(intersect.x-segment.start.x, intersect.y-segment.start.y)
+        u = Vector(segment.start.x-intersect.x, segment.start.y-intersect.y)
+
         angle = v.angle(u)
+        if concave:
+            angle -= pi
 
         n1 = 1
         n2 = index
 
         sine = n1*sin(angle)/n2
         angle2 = asin(sine)
-        angle2 -= v.angle_x()
 
-        # NOTE: Dot product used in method Vector.angle() only returns shortest
-        # angle between two vectors, but doesn't give any information about
-        # direction, therefore the location with respect to the y-axis as well
-        # as the surface radius must be checked
-        if intersect.y >= 0:
-            if self.r > 0:
-                angle2 -= v.angle_x()
-            else:
-                angle2 += v.angle_x()
+        if concave:
+            angle2 -= v.angle_x()
         else:
-            if self.r > 0:
-                angle2 += v.angle_x()
-            else:
-                angle2 -= v.angle_x()
+            angle2 -= (pi-v.angle_x())
 
         return Segment(start=intersect, angle=angle2)
 
@@ -203,6 +197,50 @@ class SphericalSurface(object):
             start = -rad2deg(half_angle)
             extent = 2*rad2deg(half_angle)
         return (self.pos_x, self.r), (self.ctr_x+self.r, -1*self.r), (start, extent)
+
+    def trace(self, ray):
+        """
+        """
+        segment = ray.get_last_segment()
+        if segment:
+            intersection = self.get_intersection(segment)
+            if intersection is None:
+                segment.out_of_range = True
+            else:
+                refraction = self.get_refraction(segment, intersection, 1.5)
+                ray.add_segment(refraction)
+
+class PlanarSurface(object):
+    """A planar optical surface
+    """
+
+    def __init__(self, pos, aperture, index):
+        """
+        """
+        self.pos_x = pos
+        self.ap = aperture
+
+    def get_intersection(self, segment):
+        """
+        """
+        x_dist = self.pos_x-segment.start.x
+        h_apt = segment.start.y+tan(segment.angle)*x_dist
+
+        if h_apt>self.ap/2 or h_apt<(-1)*self.ap/2:
+            return None
+
+        return Point(self.pos_x, h_apt)
+
+    def get_refraction(self, segment, intersect, index):
+        """
+        """
+        n1 = 1
+        n2 = index
+
+        sine = n1*sin(segmant.angle)/n2
+        angle2 = asin(sine)
+
+        return Segment(start=intersect, angle=angle2)
 
     def trace(self, ray):
         """
@@ -271,15 +309,6 @@ class Ray(object):
     def add_segment(self, newseg):
         """
         """
-        # if len(self.__segment) > 0:
-        #     if self.__segments[-1].type==Segment.UNRESOLVED:
-        #             # TODO: check for mismatches
-        #             self.__segments.append(newseg)
-        #         else:
-        #             raise ValueError("Must set start point")
-        #     else:
-        #         self.__segments.append(Segment(start=self.__segments[-1].start, end=end))
-        # else:
         if len(self.__segments)>0:
             self.__segments[-1].update(end=newseg.start)
         self.__segments.append(newseg)
@@ -378,16 +407,14 @@ class Arrangement(object):
         """
         self.components = []
         for arg in args:
-            if not isinstance(arg, Component):
-                raise ValueError("Expecting type Component")
-            self.components.append(arg)
+            self.add_component(arg)
 
     def add_component(self, component):
         """
         """
-        if not isinstance(arg, Component):
+        if not isinstance(component, Component):
             raise ValueError("Expecting type Component")
-        self.components.append(arg)
+        self.components.append(component)
 
     def trace(self, obj):
         """

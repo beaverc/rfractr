@@ -89,11 +89,12 @@ class pyTrcGUI(object):
 
 def main():
     trc = pyTrcGUI()
-    comp1 = Component(500, 25, 100, 150, 100, 3)
+    comp1 = Component(500, 25, 100, 150, -150, 3)
+    #comp2 = Component(850, 25, 100, 150, -150, 3)
     comp2 = Component(850, 30, 150, -400, -100, 3)
     arrangement = Arrangement(comp1, comp2)
     trc.add_object(arrangement)
-    ray_pattern = RayPattern(start=Point(0, 20), stop=Point(0, -20), type=RayPattern.TYPE_PAR, count=2)
+    ray_pattern = RayPattern(start=Point(0, 20), stop=Point(0, -20), type=RayPattern.TYPE_PAR, count=20)
     # ray = Ray(Point(0, -20), 0)
     arrangement.trace(ray_pattern)
     ray_pattern.print()
