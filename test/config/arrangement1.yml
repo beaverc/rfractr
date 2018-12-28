@@ -15,3 +15,12 @@ components:
     radius1:  INF
     radius2:  -100
     index:    3
+
+ray_pattern:
+  start:
+    xval: 0
+    yval: 20
+  stop:
+    xval: 0
+    yval: -20
+  count: 200

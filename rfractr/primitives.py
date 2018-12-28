@@ -407,6 +407,11 @@ class Segment(object):
             if self.type==Segment.UNRESOLVED:
                 self.angle = Vector((self.end.x-self.start.x), (self.end.y-self.start.y)).angle_x()
 
+    def get_x_intercept(self):
+        """
+        """
+        pass
+
 class Point(object):
     """
     """

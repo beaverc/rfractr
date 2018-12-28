@@ -13,6 +13,7 @@ import yaml
 from primitives import SphericalSurface, PlanarSurface, Component, Ray, Point, Arrangement, RayPattern
 
 LABEL_COMPONENTS = "components"
+LABEL_RAY_PATTERN = "ray_pattern"
 
 
 class pyTrcGUI(object):
@@ -133,6 +134,15 @@ def main(options):
 
     arrangement = Arrangement(*components)
     trc.add_object(arrangement)
+
+    if LABEL_RAY_PATTERN in config:
+        ray_pattern_config = config[LABEL_RAY_PATTERN]
+        start = Point(ray_pattern_config["start"]["xval"], ray_pattern_config["start"]["yval"])
+        stop = Point(ray_pattern_config["stop"]["xval"], ray_pattern_config["stop"]["yval"])
+        count = ray_pattern_config["count"]
+        ray_pattern = RayPattern(start=start, stop=stop, type=RayPattern.TYPE_PAR, count=count)
+        arrangement.trace(ray_pattern)
+        trc.add_object(ray_pattern)
 
     #comp1 = Component(500, 25, 100, math.inf, -150, 3)
     #comp2 = Component(850, 25, 100, 150, -150, 3)
