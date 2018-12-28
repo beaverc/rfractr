@@ -1,3 +1,3 @@
 # Rfractr
 
-Optical ray tracing program using Tkinter and pure Python3
+Python3 optical ray tracing library
