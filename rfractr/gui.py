@@ -14,6 +14,7 @@ from primitives import SphericalSurface, PlanarSurface, Component, Ray, Point, A
 
 LABEL_COMPONENTS = "components"
 LABEL_RAY_PATTERN = "ray_pattern"
+LABEL_IMAGE_BOUNDARY = "image_boundary"
 
 
 class pyTrcGUI(object):
@@ -122,7 +123,7 @@ def main(options):
     trc = pyTrcGUI()
 
     with open(options.config, "r") as fconfig:
-        config = yaml.load(fconfig.read())
+        config = yaml.safe_load(fconfig.read())
 
     if not LABEL_COMPONENTS in config:
         raise ValueError("No components specified in config file")
@@ -131,6 +132,12 @@ def main(options):
     for comp in config[LABEL_COMPONENTS]:
         proc = preprocess(comp)
         components.append(Component(*proc))
+
+    if LABEL_IMAGE_BOUNDARY in config:
+        image_boundary_config = config[LABEL_IMAGE_BOUNDARY]
+        pos = image_boundary_config["xval"]
+        boundary = PlanarSurface(pos, 250, 1)
+        components.append(boundary)
 
     arrangement = Arrangement(*components)
     trc.add_object(arrangement)

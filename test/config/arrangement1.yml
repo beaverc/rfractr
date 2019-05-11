@@ -23,4 +23,7 @@ ray_pattern:
   stop:
     xval: 0
     yval: -20
-  count: 200
+  count: 21
+
+image_boundary:
+  xval: 1500

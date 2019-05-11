@@ -75,15 +75,6 @@ class Vector(object):
         else:
             return atan(angle_tan)+sign(self.y)*pi
 
-    # def angle_y(self):
-    #     y_axis = Vector(0, self.y)
-    #     return self.angle(y_axis)
-
-    def extend(self, distance):
-        angle_x = self.angle(Vector(self.x, 0))
-        self.x += distance*cos(angle_x)
-        self.y += distance*sin(angle_x)
-
 class SphericalSurface(object):
     """A spherical optical surface
     """
@@ -95,18 +86,22 @@ class SphericalSurface(object):
         if r == 0:
             raise ValueError("Radius must be a nonzero number")
 
-        #
-        self.pos_x = pos
-        self.ctr_x = pos + r
         self.r = r
         self.ap = aperture
+        self.pos_x = pos
 
         # Get thickness
         self.thick = abs(self.r) - self.circle_x(self.ap/2)[0]
         if self.r>0:
             self.x_apt = self.thick + self.pos_x
+            self.ctr_x = pos + r
         else:
             self.x_apt = self.pos_x - self.thick
+            self.ctr_x = pos + r
+
+
+        self.r = r
+        self.ap = aperture
 
     def circle(self, x):
         """
@@ -321,6 +316,11 @@ class Component(object):
         self.surf1.trace(ray)
         self.surf2.trace(ray)
 
+class Plane(object):
+    """TODO A plane
+    """
+    pass
+
 class Ray(object):
     """Representation of an entire ray consisting of several segments
     """
@@ -410,7 +410,8 @@ class Segment(object):
     def get_x_intercept(self):
         """
         """
-        pass
+        distance = self.start.x/tan(self.angle)
+        return self.start.y+distance
 
 class Point(object):
     """
@@ -441,8 +442,8 @@ class Arrangement(object):
     def add_component(self, component):
         """
         """
-        if not isinstance(component, Component):
-            raise ValueError("Expecting type Component")
+        if not (isinstance(component, Component) or isinstance(component, PlanarSurface)):
+            raise ValueError("Expecting type Component or PlanarSurface got %s" % type(component))
         self.components.append(component)
 
     def trace(self, obj):
@@ -461,6 +462,7 @@ class RayPattern(object):
     """
     TYPE_FAN = 0
     TYPE_PAR = 1
+    TYPE_MAN = 2
 
     def __init__(self, **kwargs):
         """
@@ -468,11 +470,11 @@ class RayPattern(object):
         self.rays = []
         if not "type" in kwargs:
             raise ValueError("Expecting option 'type'")
-        if not "start" in kwargs:
-            raise ValueError("Expecting option 'start'")
-        else:
-            start = kwargs["start"]
         if kwargs["type"]==RayPattern.TYPE_PAR:
+            if not "start" in kwargs:
+                raise ValueError("Expecting option 'start'")
+            else:
+                start = kwargs["start"]
             if not "stop" in kwargs:
                 raise ValueError("Expecting option 'stop'")
             else:
@@ -486,6 +488,9 @@ class RayPattern(object):
             for i in range(count):
                 self.rays.append(Ray(Point(start.x, new_y), 0))
                 new_y += step
+        elif kwargs["type"]==RayPattern.TYPE_MAN:
+            import pdb; pdb.set_trace()
+            raise ValueError("Invalid RayPattern type")
         else:
             raise ValueError("Invalid RayPattern type")
 

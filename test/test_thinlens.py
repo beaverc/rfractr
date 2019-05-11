@@ -27,14 +27,14 @@ class TestThinLens(unittest.TestCase):
     def test_lens1(self):
         """
         """
-        lens1 = Component(100, 5, 100, 1000, -1000, 1.5)
+        lens1 = Component(100, 0, 100, 1000, -1000, 1.5)
         line = Ray(Point(0, 10), 0)
         lens1.trace(line)
+        import pdb; pdb.set_trace()
         lastseg = line.get_last_segment()
         intercept = lastseg.get_x_intercept()
         fl_measured = intercept-100
 
-        import pdb; pdb.set_trace()
         self.assertEqual(0, 1)
 
 if __name__ == '__main__':
